@@ -1,13 +1,9 @@
-# Andre Campbell
-# Structures of programming languages
-# Syntax analysis assignment
+# Syntax Analysis Programming Assignment
+### Andre Campbell
+### Structures of programming languages
 
-
-# Setup
-## Note ##
-This program will only work on Linux/MacOS systems
-##Steps ##
-Open a terminal and navagate to the project directory
-run `gcc parser.c -o parser`
-run `./parser <file_name>`
+### Setup (ONLY Linux/MacOS compatible)
+1. Open a terminal and navagate to the project directory
+2. run `gcc parser.c -o parser`
+3. run `./parser <file_name>`
 
