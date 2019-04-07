@@ -45,20 +45,29 @@ void error() {
 
 /******************************************************/
 /* main driver */
-int main() {
-	/* Open the input data file and process its contents */
-	if ((in_fp = fopen("front.in", "r")) == NULL)
-		printf("ERROR - cannot open front.in \n");
-	else {
-		getChar();
-		do {
-			lex();
-		} while (nextToken != EOF);
-		// Uncomment this when you want to show the breakdown 
-		// getChar(); 
-		// lex();
-		// expr();
+int main(int argc, char** argv) {
+	if (argc == 2) {
+		if ((in_fp = fopen(argv[1], "r")) == NULL)
+		printf("ERROR - cannot open %s\n", argv[1]);
+		else {
+			getChar();
+			do {
+				lex();
+			} while (nextToken != EOF);
+			// Uncomment this when you want to show the breakdown 
+			// getChar(); 
+			// lex();
+			// expr();
+		}
+
 	}
+	else {
+		printf("You've entered the wrong number of parameters\n");
+	}
+  	
+	/* Open the input data file and process its contents */
+
+	
 	return 0;
 }
 /*****************************************************/
