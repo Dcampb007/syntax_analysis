@@ -51,8 +51,13 @@ int main() {
 		printf("ERROR - cannot open front.in \n");
 	else {
 		getChar();
-		lex();
-		expr();
+		do {
+			lex();
+		} while (nextToken != EOF);
+		// Uncomment this when you want to show the breakdown 
+		// getChar(); 
+		// lex();
+		// expr();
 	}
 	return 0;
 }
