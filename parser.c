@@ -1,19 +1,20 @@
-
-/* front.c - a lexical analyzer system for simple
-arithmetic expressions */
 #include <stdio.h>
 #include <ctype.h>
+#include <setjmp.h>
+
+
+
+jmp_buf ex_buf__;
 
 #ifndef _TRY_THROW_CATCH_H_
 #define _TRY_THROW_CATCH_H_
-
-#include <stdio.h>
-#include <setjmp.h>
 
 /* For the full documentation and explanation of the code below, please refer to
  * http://www.di.unipi.it/~nids/docs/longjump_try_trow_catch.html
  */
 
+// Commented this one out to test it
+// #define TRY do { jmp_buf ex_buf__; switch( setjmp(ex_buf__) ) { case 0: while(1) {
 #define TRY do { jmp_buf ex_buf__; switch( setjmp(ex_buf__) ) { case 0: while(1) {
 #define CATCH(x) break; case x:
 #define FINALLY break; } default: {
@@ -22,6 +23,7 @@ arithmetic expressions */
 
 #endif /*!_TRY_THROW_CATCH_H_*/
 
+#define INVALID_EXPRESSION_EXCEPTION (1)
 /* Global declarations */
 /* Variables */
 int charClass;
@@ -58,10 +60,6 @@ int lex();
 #define AND_OP 27
 #define XOR_OP 28
 
-void error() {
-	printf("error occured");
-}
-
 /******************************************************/
 /* main driver */
 int main(int argc, char** argv) {
@@ -71,7 +69,16 @@ int main(int argc, char** argv) {
 		else {
 			getChar();
 			do {
-				lex();
+				TRY {
+					lex();
+				}
+				CATCH(INVALID_EXPRESSION_EXCEPTION) {
+					printf("Here\n");
+					while (nextChar != '\n')
+						getChar();
+					// continue reading next line
+				}
+				ETRY;
 			} while (nextToken != EOF);
 			// Uncomment this when you want to show the breakdown 
 			// getChar(); 
@@ -127,9 +134,11 @@ int lookup(char ch) {
 			nextToken = XOR_OP;
 			break;
 		default:
-			addChar();
-			nextToken = EOF;
+			THROW(INVALID_EXPRESSION_EXCEPTION);
 			break;
+			// addChar();
+			// nextToken = EOF;
+			// break;
 	}
 	return nextToken;
 }
@@ -140,8 +149,7 @@ void addChar() {
 	lexeme[lexLen++] = nextChar;
 	lexeme[lexLen] = 0;
 	}
-	else
-	printf("Error - lexeme is too long \n");
+	else THROW(INVALID_EXPRESSION_EXCEPTION);
 }
 /*****************************************************/
 /* getChar - a function to get the next character of
@@ -155,8 +163,7 @@ void getChar() {
 	charClass = DIGIT;
 	else charClass = UNKNOWN;
 	}
-	else
-	charClass = EOF;
+	else charClass = EOF;
 }
 /*****************************************************/
 /* getNonBlank - a function to call getChar until it
@@ -284,18 +291,18 @@ void factor() {
 	left parenthesis, call expr, and check for the right
 	parenthesis */
 	else {
-	if (nextToken == LEFT_PAREN) {
-	lex();
-	expr();
-	if (nextToken == RIGHT_PAREN)
-	lex();
-	else
-	error();
-	} /* End of if (nextToken == ... */
-	/* It was not an id, an integer literal, or a left
-	parenthesis */
-	else
-	error();
-	} /* End of else */
-	printf("Exit <factor>\n");;
+		if (nextToken == LEFT_PAREN) {
+			lex();
+			expr();
+		if (nextToken == RIGHT_PAREN)
+			lex();
+		else THROW(INVALID_EXPRESSION_EXCEPTION);
+		}
+		 /* End of if (nextToken == ... */
+		/* It was not an id, an integer literal, or a left
+		parenthesis */
+		else THROW(INVALID_EXPRESSION_EXCEPTION);
+		 /* End of else */
+	}
+	printf("Exit <factor>\n");
 } /* End of function factor */
