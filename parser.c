@@ -1,29 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
-#include <setjmp.h>
 
-
-
-jmp_buf ex_buf__;
-
-#ifndef _TRY_THROW_CATCH_H_
-#define _TRY_THROW_CATCH_H_
-
-/* For the full documentation and explanation of the code below, please refer to
- * http://www.di.unipi.it/~nids/docs/longjump_try_trow_catch.html
- */
-
-// Commented this one out to test it
-// #define TRY do { jmp_buf ex_buf__; switch( setjmp(ex_buf__) ) { case 0: while(1) {
-#define TRY do { jmp_buf ex_buf__; switch( setjmp(ex_buf__) ) { case 0: while(1) {
-#define CATCH(x) break; case x:
-#define FINALLY break; } default: {
-#define ETRY break; } } }while(0)
-#define THROW(x) longjmp(ex_buf__, x)
-
-#endif /*!_TRY_THROW_CATCH_H_*/
-
-#define INVALID_EXPRESSION_EXCEPTION (1)
 /* Global declarations */
 /* Variables */
 int charClass;
@@ -33,6 +11,9 @@ int lexLen;
 int token;
 int nextToken;
 FILE *in_fp, *fopen();
+char * line = NULL;
+size_t len = 0;
+ssize_t read;
 
 /* Function declarations */
 void addChar();
@@ -46,7 +27,9 @@ int lex();
 /* Character classes */
 #define LETTER 0
 #define DIGIT 1
+#define NEW_LINE 2
 #define UNKNOWN 99
+
 /* Token codes */
 #define INT_LIT 10
 #define IDENT 11
@@ -59,33 +42,28 @@ int lex();
 #define RIGHT_PAREN 26
 #define AND_OP 27
 #define XOR_OP 28
+#define NEW_LINE_CHAR '\n'
 
 /******************************************************/
 /* main driver */
 int main(int argc, char** argv) {
 	if (argc == 2) {
+
 		if ((in_fp = fopen(argv[1], "r")) == NULL)
 		printf("ERROR - cannot open %s\n", argv[1]);
 		else {
-			getChar();
 			do {
-				TRY {
-					lex();
-				}
-				CATCH(INVALID_EXPRESSION_EXCEPTION) {
-					printf("Here\n");
-					while (nextChar != '\n')
-						getChar();
-					// continue reading next line
-				}
-				ETRY;
+				read = getline(&line, &len, in_fp);
+				if (read == -1)
+					break;
+	        	printf("Retrieved line of length %zu:\n", read);
+	        	printf("%s", line);
 			} while (nextToken != EOF);
-			// Uncomment this when you want to show the breakdown 
-			// getChar(); 
-			// lex();
-			// expr();
+		fclose(in_fp);
+		if (line)
+			free(line);
+		exit(EXIT_SUCCESS);
 		}
-
 	}
 	else {
 		printf("You've entered the wrong number of parameters\n");
@@ -134,7 +112,7 @@ int lookup(char ch) {
 			nextToken = XOR_OP;
 			break;
 		default:
-			THROW(INVALID_EXPRESSION_EXCEPTION);
+			nextToken = NEW_LINE_CHAR;
 			break;
 			// addChar();
 			// nextToken = EOF;
@@ -149,7 +127,7 @@ void addChar() {
 	lexeme[lexLen++] = nextChar;
 	lexeme[lexLen] = 0;
 	}
-	else THROW(INVALID_EXPRESSION_EXCEPTION);
+	else;
 }
 /*****************************************************/
 /* getChar - a function to get the next character of
@@ -161,6 +139,8 @@ void getChar() {
 	else if (isdigit(
 	nextChar))
 	charClass = DIGIT;
+	else if (nextChar == NEW_LINE_CHAR) //could potentially give some trouble for the last line having new line and eof character 
+		charClass = NEW_LINE;
 	else charClass = UNKNOWN;
 	}
 	else charClass = EOF;
@@ -199,6 +179,8 @@ int lex() {
 			getChar();
 			}
 			nextToken = INT_LIT;
+			break;
+		case NEW_LINE:
 			break;
 		/* Parentheses and operators */
 		case UNKNOWN:
@@ -296,12 +278,12 @@ void factor() {
 			expr();
 		if (nextToken == RIGHT_PAREN)
 			lex();
-		else THROW(INVALID_EXPRESSION_EXCEPTION);
+		else printf("ERROR");
 		}
 		 /* End of if (nextToken == ... */
 		/* It was not an id, an integer literal, or a left
 		parenthesis */
-		else THROW(INVALID_EXPRESSION_EXCEPTION);
+		else printf("ERROR");
 		 /* End of else */
 	}
 	printf("Exit <factor>\n");
