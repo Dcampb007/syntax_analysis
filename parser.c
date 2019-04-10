@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 /* Global declarations */
 /* Variables */
+int still_valid = 1;
 int charClass;
 char lexeme [100];
 char nextChar = ' ';
@@ -61,11 +63,16 @@ int main(int argc, char** argv) {
 				if (read == -1)
 					break;
 				nextChar = ' ';
-				while(nextChar != NEW_LINE_CHAR) {
-	        		lex();	
+				still_valid = 1;
+				while((nextChar != NEW_LINE_CHAR) && still_valid) {
+	        		lex();
+	        		if (still_valid == 0) {
+	        			printf("Error Occured\n");
+	        		}
 	        	}
 	        	printf("\n\n");
 	        	if (line){
+	        		//memset(line, 0, sizeof(line));
 					len = 0;
 					line_index = 0;
 				}	
@@ -193,7 +200,6 @@ int lex() {
 			nextToken = INT_LIT;
 			break;
 		case NEW_LINE:
-			printf("got to the new line case\n");
 			break;
 		/* Parentheses and operators */
 		case UNKNOWN:
@@ -291,12 +297,12 @@ void factor() {
 			expr();
 		if (nextToken == RIGHT_PAREN)
 			lex();
-		else printf("ERROR");
+		else still_valid = 0;
 		}
 		 /* End of if (nextToken == ... */
 		/* It was not an id, an integer literal, or a left
 		parenthesis */
-		else printf("ERROR");
+		else still_valid = 0;
 		 /* End of else */
 	}
 	printf("Exit <factor>\n");
