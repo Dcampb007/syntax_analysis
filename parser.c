@@ -6,13 +6,15 @@
 /* Variables */
 int charClass;
 char lexeme [100];
-char nextChar;
+char nextChar = ' ';
+char NEW_LINE_CHAR = '\n';
 int lexLen;
 int token;
 int nextToken;
 FILE *in_fp, *fopen();
 char * line = NULL;
 size_t len = 0;
+ssize_t line_index = 0;
 ssize_t read;
 
 /* Function declarations */
@@ -23,6 +25,7 @@ void expr();
 void term();
 void boolean();
 void factor();
+void reset_buffer();
 int lex();
 /* Character classes */
 #define LETTER 0
@@ -42,7 +45,7 @@ int lex();
 #define RIGHT_PAREN 26
 #define AND_OP 27
 #define XOR_OP 28
-#define NEW_LINE_CHAR '\n'
+
 
 /******************************************************/
 /* main driver */
@@ -52,16 +55,24 @@ int main(int argc, char** argv) {
 		if ((in_fp = fopen(argv[1], "r")) == NULL)
 		printf("ERROR - cannot open %s\n", argv[1]);
 		else {
-			do {
+			while(nextToken != EOF) {
 				read = getline(&line, &len, in_fp);
+				printf("%s\n", line);
 				if (read == -1)
 					break;
-	        	printf("Retrieved line of length %zu:\n", read);
-	        	printf("%s", line);
-			} while (nextToken != EOF);
-		fclose(in_fp);
+				nextChar = ' ';
+				while(nextChar != NEW_LINE_CHAR) {
+	        		lex();	
+	        	}
+	        	printf("\n\n");
+	        	if (line){
+					len = 0;
+					line_index = 0;
+				}	
+        	}
 		if (line)
 			free(line);
+		fclose(in_fp);
 		exit(EXIT_SUCCESS);
 		}
 	}
@@ -112,11 +123,9 @@ int lookup(char ch) {
 			nextToken = XOR_OP;
 			break;
 		default:
-			nextToken = NEW_LINE_CHAR;
+			addChar();
+			nextToken = EOF;
 			break;
-			// addChar();
-			// nextToken = EOF;
-			// break;
 	}
 	return nextToken;
 }
@@ -133,17 +142,16 @@ void addChar() {
 /* getChar - a function to get the next character of
 input and determine its character class */
 void getChar() {
-	if ((nextChar = getc(in_fp)) != EOF) {
-	if (isalpha(nextChar))
-	charClass = LETTER;
-	else if (isdigit(
-	nextChar))
-	charClass = DIGIT;
-	else if (nextChar == NEW_LINE_CHAR) //could potentially give some trouble for the last line having new line and eof character 
-		charClass = NEW_LINE;
-	else charClass = UNKNOWN;
+	nextChar = line[line_index++];
+	if (nextChar != NEW_LINE_CHAR) {
+		if (isalpha(nextChar))
+			charClass = LETTER;
+		else if (isdigit(nextChar))
+			charClass = DIGIT;
+		else charClass = UNKNOWN;
 	}
-	else charClass = EOF;
+	else charClass = NEW_LINE;
+
 }
 /*****************************************************/
 /* getNonBlank - a function to call getChar until it
@@ -151,9 +159,11 @@ returns a non-
 whitespace
 character */
 void getNonBlank() {
-while (isspace(nextChar))
-getChar();
+	while (isspace(nextChar)) {
+		getChar();
+	}
 }
+
 /*****************************************************/
 /* lex - a simple lexical analyzer for arithmetic
 expressions */
@@ -161,12 +171,14 @@ int lex() {
 	lexLen = 0;
 	getNonBlank();
 	switch (charClass) {/* Parse identifiers */
-	case LETTER:
-	addChar();
-	getChar();
-	while (charClass == LETTER || charClass == DIGIT) {
+		case LETTER:
 		addChar();
 		getChar();
+		while (charClass == LETTER || charClass == DIGIT) {
+			addChar();
+			getChar();
+			printf("Here\n");
+
 		}
 		nextToken = IDENT;
 		break;
@@ -181,6 +193,7 @@ int lex() {
 			nextToken = INT_LIT;
 			break;
 		case NEW_LINE:
+			printf("got to the new line case\n");
 			break;
 		/* Parentheses and operators */
 		case UNKNOWN:
