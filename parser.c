@@ -47,6 +47,7 @@ int lex();
 #define RIGHT_PAREN 26
 #define AND_OP 27
 #define XOR_OP 28
+#define NOT_VALID 29
 
 
 /******************************************************/
@@ -57,7 +58,7 @@ int main(int argc, char** argv) {
 		if ((in_fp = fopen(argv[1], "r")) == NULL)
 		printf("ERROR - cannot open %s\n", argv[1]);
 		else {
-			while(nextToken != EOF) {
+			while(nextChar != UNKNOWN) {
 				read = getline(&line, &len, in_fp);
 				printf("%s\n", line);
 				if (read == -1)
@@ -66,6 +67,7 @@ int main(int argc, char** argv) {
 				still_valid = 1;
 				while((nextChar != NEW_LINE_CHAR) && still_valid) {
 	        		lex();
+	        		expr();
 	        		if (still_valid == 0) {
 	        			printf("Error Occured\n");
 	        		}
@@ -129,9 +131,14 @@ int lookup(char ch) {
 			addChar();
 			nextToken = XOR_OP;
 			break;
-		default:
+		case EOF:
 			addChar();
 			nextToken = EOF;
+			break;
+		default:
+			addChar();
+			nextToken = NOT_VALID;
+			still_valid = 0;
 			break;
 	}
 	return nextToken;
@@ -150,14 +157,17 @@ void addChar() {
 input and determine its character class */
 void getChar() {
 	nextChar = line[line_index++];
-	if (nextChar != NEW_LINE_CHAR) {
+	if (nextChar != EOF) {
 		if (isalpha(nextChar))
 			charClass = LETTER;
 		else if (isdigit(nextChar))
 			charClass = DIGIT;
-		else charClass = UNKNOWN;
+		else if (nextChar == NEW_LINE_CHAR)
+			charClass = NEW_LINE;
+		else 
+			charClass = UNKNOWN;
 	}
-	else charClass = NEW_LINE;
+	else charClass = UNKNOWN;
 
 }
 /*****************************************************/
